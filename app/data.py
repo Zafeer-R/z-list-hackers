@@ -58,26 +58,23 @@ def ranked_list(state=None, specialty=None, min_score=0, npi_search=None, show_e
     if _merged is None:
         load_data()
 
-    df = _merged.copy()
-
-    # Apply filters
+    df = _merged
+    mask = pd.Series(True, index=df.index)
     if state:
-        df = df[df["Prscrbr_State_Abrvtn"] == state]
+        mask &= df["Prscrbr_State_Abrvtn"] == state
     if specialty:
-        df = df[df["Prscrbr_Type"] == specialty]
+        mask &= df["Prscrbr_Type"] == specialty
     if min_score:
-        df = df[df["combined_score"] >= min_score]
+        mask &= df["combined_score"] >= min_score
     if npi_search:
         search_str = str(npi_search).strip().upper()
-        df = df[(df["npi"] == search_str) | (df["pseudonym"] == search_str)]
+        mask &= (df["npi"] == search_str) | (df["pseudonym"] == search_str)
 
-    df = df.sort_values("combined_rank").reset_index(drop=True)
-
-    cols = ["combined_rank", "pseudonym", "Prscrbr_Type", "Prscrbr_State_Abrvtn", "combined_score", "rules_score", "reason_1"]
+    cols = ["npi", "combined_rank", "pseudonym", "Prscrbr_Type", "Prscrbr_State_Abrvtn", "combined_score", "rules_score", "reason_1"]
+    out = df.loc[mask, cols].sort_values("combined_rank").reset_index(drop=True)
     if show_exclusion:
-        df["excluded_later"] = df["npi"].map(lambda n: "Yes" if _exclusions.get(n, (False, None))[0] else "No")
-        cols.append("excluded_later")
-    return df[cols]
+        out["excluded_later"] = out["npi"].map(lambda n: "Yes" if _exclusions.get(n, (False, None))[0] else "No")
+    return out.drop(columns="npi")
 
 
 def npi_for_rank(rank):

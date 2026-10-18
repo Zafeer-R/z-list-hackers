@@ -39,7 +39,7 @@
   </thead>
   <tbody>
     {% for r in rows %}
-    <tr>
+    <tr class="clickable" onclick="location.href='/provider/{{ r.combined_rank }}{{ query_suffix }}'">
       <td>{{ r.combined_rank }}</td>
       <td><a href="/provider/{{ r.combined_rank }}{{ query_suffix }}">{{ r.pseudonym }}</a></td>
       <td>{{ r.Prscrbr_Type }}</td>
