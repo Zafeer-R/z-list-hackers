@@ -1,19 +1,49 @@
 """IBM Granite explanation for one provider. No UI imports.
 
 Sends only the provider's specialty, state, scores and reasons, never an NPI or pseudonym.
-The access token comes from the IBM_ACCESS_TOKEN environment variable and is never stored.
+Credentials come from the environment and are never written to disk:
+IBM_API_KEY (preferred, tokens are refreshed automatically) or IBM_ACCESS_TOKEN (expires in about an hour).
 """
 
 import json
 import os
 import re
+import time
 import urllib.error
+import urllib.parse
 import urllib.request
 
 from . import config
 
 BANNED_WORDS = re.compile(r"\b(fraud\w*|kickback\w*|banned)\b", re.IGNORECASE)
 WITHHELD = "Explanation withheld: the generated wording did not pass the review wording check."
+IAM_URL = "https://iam.cloud.ibm.com/identity/token"
+
+_cached_token = None
+_cached_expiry = 0.0
+
+
+def access_token():
+    """Return a valid IAM token, refreshing it from IBM_API_KEY a few minutes before it expires."""
+    global _cached_token, _cached_expiry
+    api_key = os.environ.get("IBM_API_KEY")
+    if not api_key:
+        return os.environ.get("IBM_ACCESS_TOKEN")
+    if _cached_token and time.time() < _cached_expiry - 300:
+        return _cached_token
+    body = urllib.parse.urlencode({
+        "grant_type": "urn:ibm:params:oauth:grant-type:apikey",
+        "apikey": api_key,
+    }).encode("utf-8")
+    request = urllib.request.Request(
+        IAM_URL, data=body, method="POST",
+        headers={"Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json"},
+    )
+    with urllib.request.urlopen(request, timeout=30) as response:
+        token = json.load(response)
+    _cached_token = token["access_token"]
+    _cached_expiry = float(token.get("expiration", time.time() + 3600))
+    return _cached_token
 
 
 def build_prompt(p):
@@ -36,9 +66,12 @@ def build_prompt(p):
 
 
 def explain(p):
-    token = os.environ.get("IBM_ACCESS_TOKEN")
+    try:
+        token = access_token()
+    except (urllib.error.URLError, KeyError, ValueError):
+        return "Granite could not sign in to IBM Cloud. Check IBM_API_KEY and the network connection."
     if not token:
-        return "Granite explanations are off: IBM_ACCESS_TOKEN is not set on this machine."
+        return "Granite explanations are off: set IBM_API_KEY (or IBM_ACCESS_TOKEN) on this machine."
 
     payload = {
         "model_id": config.GRANITE_MODEL,
