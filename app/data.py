@@ -11,6 +11,7 @@ _scores = None
 _labels = None
 _merged = None
 _peer_medians = None
+_exclusions = {}
 
 
 def load_data():
@@ -25,6 +26,12 @@ def load_data():
 
     # Load labels
     _labels = pd.read_csv(config.LABELS_FILE, dtype={"npi": str})
+
+    global _exclusions
+    _exclusions = {
+        npi: (bool(any_), date)
+        for npi, any_, date in zip(_labels["npi"], _labels["label_any"].fillna(0), _labels["exclusion_date"])
+    }
 
     # Private pseudonyms: every scored provider must have one, or the app fails at startup
     pseudonyms = pd.read_csv(config.PSEUDONYMS_FILE, dtype={"npi": str})
@@ -42,10 +49,11 @@ def load_data():
         _peer_medians[feat] = medians
 
 
-def ranked_list(state=None, specialty=None, min_score=0, npi_search=None):
+def ranked_list(state=None, specialty=None, min_score=0, npi_search=None, show_exclusion=False):
     """
     Filter providers by state, specialty, minimum score, and NPI or pseudonym search.
     Return dataframe sorted by combined_rank, with pseudonyms in place of NPIs.
+    Exclusion status is added only when show_exclusion is True (hidden by default).
     """
     if _merged is None:
         load_data()
@@ -65,7 +73,11 @@ def ranked_list(state=None, specialty=None, min_score=0, npi_search=None):
 
     df = df.sort_values("combined_rank").reset_index(drop=True)
 
-    return df[["combined_rank", "pseudonym", "Prscrbr_Type", "Prscrbr_State_Abrvtn", "combined_score", "rules_score", "reason_1"]]
+    cols = ["combined_rank", "pseudonym", "Prscrbr_Type", "Prscrbr_State_Abrvtn", "combined_score", "rules_score", "reason_1"]
+    if show_exclusion:
+        df["excluded_later"] = df["npi"].map(lambda n: "Yes" if _exclusions.get(n, (False, None))[0] else "No")
+        cols.append("excluded_later")
+    return df[cols]
 
 
 def npi_for_rank(rank):
@@ -78,11 +90,12 @@ def npi_for_rank(rank):
     return row.iloc[0]["npi"]
 
 
-def provider_detail(npi):
+def provider_detail(npi, show_exclusion=False):
     """
     Get detailed view for a single provider.
     Returns dict with score, rules_score, three reasons with percentiles,
     peer group info, and all eight features with raw value, peer median, percentile.
+    Exclusion status is included only when show_exclusion is True.
     """
     if _merged is None:
         load_data()
@@ -150,16 +163,11 @@ def provider_detail(npi):
             "percentile": pct_val,
         })
 
-    # Optional exclusion status
-    if config.ENABLE_EXCLUSION_STATUS:
-        label_row = _labels[_labels["npi"] == npi_str]
-        if len(label_row) > 0:
-            label_row = label_row.iloc[0]
-            result["exclusion_status"] = {
-                "is_excluded": bool(label_row["label_any"]),
-                "exclusion_type": label_row["exclusion_type"] if pd.notna(label_row["exclusion_type"]) else None,
-                "exclusion_date": label_row["exclusion_date"] if pd.notna(label_row["exclusion_date"]) else None,
-            }
+    if show_exclusion:
+        excluded, date = _exclusions.get(npi_str, (False, None))
+        result["exclusion_month"] = (
+            pd.to_datetime(date).strftime("%B %Y") if excluded and pd.notna(date) else None
+        )
 
     return result
 

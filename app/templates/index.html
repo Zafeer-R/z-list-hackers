@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>Ranked list</h1>
+<p><a href="/results">Backtest results</a></p>
 
 <form class="filters" method="get" action="/">
   <label>State
@@ -21,6 +22,7 @@
   <label>Search provider ID
     <input type="text" name="q" value="{{ q }}" maxlength="12">
   </label>
+  <label><input type="checkbox" name="show_exclusion" value="1" {% if show %}checked{% endif %}> Show exclusion status</label>
   <button type="submit">Apply</button>
   <a href="/">Reset</a>
 </form>
@@ -32,21 +34,23 @@
     <tr>
       <th>Rank</th><th>Provider</th><th>Specialty</th><th>State</th>
       <th>Score</th><th>Rules</th><th>Top reason</th>
+      {% if show %}<th>Excluded later</th>{% endif %}
     </tr>
   </thead>
   <tbody>
     {% for r in rows %}
     <tr>
       <td>{{ r.combined_rank }}</td>
-      <td><a href="/provider/{{ r.combined_rank }}">{{ r.pseudonym }}</a></td>
+      <td><a href="/provider/{{ r.combined_rank }}{{ query_suffix }}">{{ r.pseudonym }}</a></td>
       <td>{{ r.Prscrbr_Type }}</td>
       <td>{{ r.Prscrbr_State_Abrvtn }}</td>
       <td>{{ "%.1f" | format(r.combined_score) }}</td>
       <td>{{ r.rules_score }} of 8 measures</td>
       <td>{{ r.reason_1 }}</td>
+      {% if show %}<td>{{ r.excluded_later }}</td>{% endif %}
     </tr>
     {% else %}
-    <tr><td colspan="7">No providers match these filters.</td></tr>
+    <tr><td colspan="{{ 8 if show else 7 }}">No providers match these filters.</td></tr>
     {% endfor %}
   </tbody>
 </table>

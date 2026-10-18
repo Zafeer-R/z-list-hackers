@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-<p><a href="/">Back to list</a></p>
+<p><a href="/{{ '?show_exclusion=1' if show else '' }}">Back to list</a></p>
 <h1>Provider {{ p.pseudonym }}</h1>
 <p class="muted">{{ p.specialty }}, {{ p.state }} · rank {{ rank }}</p>
 
@@ -19,6 +19,13 @@
     {% endfor %}
   </ol>
 </div>
+
+{% if show and p.exclusion_month %}
+<div class="card">
+  <h2 style="margin-top:0">Exclusion status</h2>
+  <p>Appeared on the OIG exclusion list, {{ p.exclusion_month }} (public record).</p>
+</div>
+{% endif %}
 
 <div class="card">
   <h2 style="margin-top:0">Peer group</h2>

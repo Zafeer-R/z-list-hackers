@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<p><a href="/">Back to list</a></p>
+<h1>Backtest results</h1>
+<p class="muted">Providers excluded from Medicare later (2023 to 2026, under the seven OIG codes selected for this analysis), found in the top 5% and top 10% of ranked providers, compared with ranking by total drug cost and with chance. Small sample: read as a modest signal, not proof.</p>
+
+{% if table %}
+<table>
+  <thead>
+    <tr>
+      <th>Ranking</th><th>Found in top 5%</th><th>Found in top 10%</th><th>Top 100</th><th>Top 500</th><th>AUC</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in table %}
+    <tr>
+      <td>{{ r.ranking }}</td><td>{{ r.top5 }}</td><td>{{ r.top10 }}</td><td>{{ r.top100 }}</td><td>{{ r.top500 }}</td><td>{{ r.auc }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>Results will appear here after the final backtest run.</p>
+{% endif %}
+{% endblock %}
