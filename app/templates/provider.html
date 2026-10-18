@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<p><a href="/">Back to list</a></p>
+<h1>Provider {{ p.npi_masked }}</h1>
+<p class="muted">{{ p.specialty }}, {{ p.state }} · rank {{ rank }}</p>
+
+<div class="card stats">
+  <div class="stat"><div class="muted">Combined score</div><div class="val">{{ "%.1f" | format(p.combined_score) }}</div><div class="muted">0 to 100, higher = more unusual</div></div>
+  <div class="stat"><div class="muted">Rules score</div><div class="val">{{ p.rules_score }} of 8</div><div class="muted">measures in the top 10% of peers</div></div>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0">Why this provider was flagged</h2>
+  <ol class="reasons">
+    {% for r in p.reasons %}
+    <li>{{ r.text }} <span class="muted">({{ r.percentile | pct }} percentile)</span></li>
+    {% else %}
+    <li class="muted">No reasons available.</li>
+    {% endfor %}
+  </ol>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0">Peer group</h2>
+  <p>{{ p.peer_group.specialty }} in {{ p.peer_group.state }}, {{ p.peer_group.peer_used_n | fmt }} eligible peers.</p>
+  {% if p.peer_group.peer_fallback %}
+  <p class="muted">This group is small, so percentiles fall back to the specialty nationwide group.</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0">All eight measures</h2>
+  <p class="muted">Bars show the percentile within peers. The black line marks 90%. Right column: raw value and peer median.</p>
+  {% for f in p.features %}
+  <div class="bar-row">
+    <div>{{ f.label }}</div>
+    <div class="track" title="{{ f.percentile | pct }}">
+      {% if f.percentile is not none %}
+      <div class="fill {% if f.percentile >= 0.9 %}flagged{% endif %}" style="width: {{ (f.percentile * 100) | round(1) }}%"></div>
+      {% endif %}
+      <div class="threshold"></div>
+    </div>
+    <div class="muted">{{ f.raw_value | fmt }} vs median {{ f.peer_median | fmt }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

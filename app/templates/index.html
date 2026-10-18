@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Ranked list</h1>
+
+<form class="filters" method="get" action="/">
+  <label>State
+    <select name="state">
+      <option value="">All</option>
+      {% for s in states %}<option value="{{ s }}" {% if s == state %}selected{% endif %}>{{ s }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Specialty
+    <select name="specialty">
+      <option value="">All</option>
+      {% for s in specialties %}<option value="{{ s }}" {% if s == specialty %}selected{% endif %}>{{ s }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Minimum score
+    <input type="number" name="min_score" min="0" max="100" step="1" value="{{ min_score or '' }}">
+  </label>
+  <label>Search NPI (last 4 or full)
+    <input type="text" name="q" value="{{ q }}" maxlength="10">
+  </label>
+  <button type="submit">Apply</button>
+  <a href="/">Reset</a>
+</form>
+
+<p class="muted">{{ total | fmt }} providers match{% if total > max_rows %}. Showing the first {{ max_rows }} by rank.{% endif %}</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Rank</th><th>NPI</th><th>Specialty</th><th>State</th>
+      <th>Score</th><th>Rules</th><th>Top reason</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td>{{ r.combined_rank }}</td>
+      <td><a href="/provider/{{ r.combined_rank }}">{{ r.npi_masked }}</a></td>
+      <td>{{ r.Prscrbr_Type }}</td>
+      <td>{{ r.Prscrbr_State_Abrvtn }}</td>
+      <td>{{ "%.1f" | format(r.combined_score) }}</td>
+      <td>{{ r.rules_score }} of 8 measures</td>
+      <td>{{ r.reason_1 }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7">No providers match these filters.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Z-List Hackers: Prescribing Review</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 24px 16px; color: #1f2933; background: #fafafa; }
+    main { max-width: 1100px; margin: 0 auto; }
+    h1 { font-size: 1.5rem; margin: 0 0 16px; }
+    h2 { font-size: 1.1rem; margin: 24px 0 8px; }
+    a { color: #1d4ed8; }
+    form.filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 16px; }
+    form.filters label { display: flex; flex-direction: column; font-size: 0.85rem; gap: 4px; }
+    input, select, button { font: inherit; padding: 6px 8px; }
+    table { width: 100%; border-collapse: collapse; background: #fff; }
+    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #e4e7eb; font-size: 0.9rem; vertical-align: top; }
+    th { background: #f1f5f9; }
+    .muted { color: #616e7c; font-size: 0.85rem; }
+    .card { background: #fff; border: 1px solid #e4e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .stats { display: flex; flex-wrap: wrap; gap: 16px; }
+    .stat { min-width: 140px; }
+    .stat .val { font-size: 1.6rem; font-weight: 600; }
+    ol.reasons li { margin-bottom: 6px; }
+    .bar-row { display: grid; grid-template-columns: 240px 1fr 220px; gap: 12px; align-items: center; margin-bottom: 8px; font-size: 0.88rem; }
+    .track { position: relative; height: 14px; background: #e4e7eb; border-radius: 4px; }
+    .fill { position: absolute; left: 0; top: 0; bottom: 0; background: #3b82f6; border-radius: 4px; }
+    .fill.flagged { background: #dc6803; }
+    .threshold { position: absolute; top: -4px; bottom: -4px; width: 2px; left: 90%; background: #111827; }
+    footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid #e4e7eb; color: #616e7c; font-size: 0.85rem; }
+    @media (max-width: 720px) {
+      .bar-row { grid-template-columns: 1fr; }
+      table, thead, tbody, tr, th, td { display: block; }
+      thead { display: none; }
+      td { border-bottom: none; padding: 4px 8px; }
+      tr { border-bottom: 1px solid #e4e7eb; padding: 6px 0; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  {% block content %}{% endblock %}
+  <footer>{{ footer }}</footer>
+</main>
+</body>
+</html>
