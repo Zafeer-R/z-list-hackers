@@ -44,7 +44,7 @@
       <td><a href="/provider/{{ r.combined_rank }}{{ query_suffix }}">{{ r.pseudonym }}</a></td>
       <td>{{ r.Prscrbr_Type }}</td>
       <td>{{ r.Prscrbr_State_Abrvtn }}</td>
-      <td>{{ "%.1f" | format(r.combined_score) }}</td>
+      <td>{{ "%.2f" | format(r.combined_score) }}</td>
       <td>{{ r.rules_score }} of 8 measures</td>
       <td>{{ r.reason_1 }}</td>
       {% if show %}<td>{{ r.excluded_later }}</td>{% endif %}

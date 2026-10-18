@@ -5,7 +5,7 @@
 <p class="muted">{{ p.specialty }}, {{ p.state }} · rank {{ rank }}</p>
 
 <div class="card stats">
-  <div class="stat"><div class="muted">Combined score</div><div class="val">{{ "%.1f" | format(p.combined_score) }}</div><div class="muted">0 to 100, higher = more unusual</div></div>
+  <div class="stat"><div class="muted">Combined score</div><div class="val">{{ "%.2f" | format(p.combined_score) }}</div><div class="muted">0 to 100, higher = more unusual</div></div>
   <div class="stat"><div class="muted">Rules score</div><div class="val">{{ p.rules_score }} of 8</div><div class="muted">measures in the top 10% of peers</div></div>
 </div>
 
