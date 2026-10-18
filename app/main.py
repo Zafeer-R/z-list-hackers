@@ -66,7 +66,7 @@ def index():
         specialties=stats["specialties"],
         state=state,
         specialty=specialty,
-        q=q,
+        q="" if q.isdigit() else q,
         min_score=min_score,
     )
 

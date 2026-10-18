@@ -37,16 +37,17 @@ def main():
     else:
         print(f"✗ {len(unmatched)} scored NPIs don't join to features")
 
-    # Check masking works
-    print("\nChecking NPI masking...")
-    test_npis = ["1234567890", "1234567899", "1000000001"]
-    for npi in test_npis:
-        masked = data.mask_npi(npi)
-        expected = f"**{npi[-4:]}"
-        if masked == expected:
-            print(f"✓ {npi} → {masked}")
-        else:
-            print(f"✗ {npi} → {masked} (expected {expected})")
+    # Check pseudonyms: one per scored provider, unique, and in the TX-SPEC-NNNNN format
+    print("\nChecking pseudonyms...")
+    pseudo = merged["pseudonym"]
+    well_formed = pseudo.str.match(r"^[A-Z]{2}-[A-Z]+-\d{4,}$").all()
+    if pseudo.is_unique and well_formed and pseudo.notna().all():
+        print(f"✓ {len(pseudo):,} unique pseudonyms, all well formed")
+    else:
+        print(f"✗ pseudonym problem: unique={pseudo.is_unique}, well formed={well_formed}")
+    pseudo_set = set(pseudo)
+    leaked = int(merged["npi"].isin(pseudo_set).sum())
+    print("✓ no NPI appears as a pseudonym" if leaked == 0 else f"✗ {leaked} NPIs used as pseudonyms")
 
     # Test ranked_list() and provider_detail() for top 3
     print("\nTesting ranked_list() and provider_detail()...")
@@ -54,7 +55,7 @@ def main():
     print(f"✓ ranked_list() returned {len(top3)} rows")
     print("\nTop 3 providers:")
     for idx, row in top3.iterrows():
-        print(f"  {idx+1}. {row['npi_masked']} - {row['Prscrbr_Type']}, {row['Prscrbr_State_Abrvtn']}, score={row['combined_score']}")
+        print(f"  {idx+1}. {row['pseudonym']} - {row['Prscrbr_Type']}, {row['Prscrbr_State_Abrvtn']}, score={row['combined_score']}")
 
     print("\nProvider details for top 3:")
     # Get original NPIs from merged data for provider_detail
@@ -62,7 +63,7 @@ def main():
     for npi in top3_npis:
         detail = data.provider_detail(npi)
         if detail:
-            print(f"\n  {detail['npi_masked']} - {detail['specialty']}, {detail['state']}")
+            print(f"\n  {detail['pseudonym']} - {detail['specialty']}, {detail['state']}")
             print(f"    Combined score: {detail['combined_score']}")
             print(f"    Rules score: {detail['rules_score']}")
             print(f"    Peer group: {detail['peer_group']['specialty']} in {detail['peer_group']['state']} (n={detail['peer_group']['peer_used_n']})")

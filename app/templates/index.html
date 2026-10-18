@@ -18,8 +18,8 @@
   <label>Minimum score
     <input type="number" name="min_score" min="0" max="100" step="1" value="{{ min_score or '' }}">
   </label>
-  <label>Search NPI (last 4 or full)
-    <input type="text" name="q" value="{{ q }}" maxlength="10">
+  <label>Search provider ID
+    <input type="text" name="q" value="{{ q }}" maxlength="12">
   </label>
   <button type="submit">Apply</button>
   <a href="/">Reset</a>
@@ -30,7 +30,7 @@
 <table>
   <thead>
     <tr>
-      <th>Rank</th><th>NPI</th><th>Specialty</th><th>State</th>
+      <th>Rank</th><th>Provider</th><th>Specialty</th><th>State</th>
       <th>Score</th><th>Rules</th><th>Top reason</th>
     </tr>
   </thead>
@@ -38,7 +38,7 @@
     {% for r in rows %}
     <tr>
       <td>{{ r.combined_rank }}</td>
-      <td><a href="/provider/{{ r.combined_rank }}">{{ r.npi_masked }}</a></td>
+      <td><a href="/provider/{{ r.combined_rank }}">{{ r.pseudonym }}</a></td>
       <td>{{ r.Prscrbr_Type }}</td>
       <td>{{ r.Prscrbr_State_Abrvtn }}</td>
       <td>{{ "%.1f" | format(r.combined_score) }}</td>

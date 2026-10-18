@@ -26,8 +26,13 @@ def load_data():
     # Load labels
     _labels = pd.read_csv(config.LABELS_FILE, dtype={"npi": str})
 
-    # Join features and scores on npi
+    # Private pseudonyms: every scored provider must have one, or the app fails at startup
+    pseudonyms = pd.read_csv(config.PSEUDONYMS_FILE, dtype={"npi": str})
+
+    # Join features, scores and pseudonyms on npi
     _merged = _features.merge(_scores, on="npi", how="inner", suffixes=("_feat", "_score"))
+    _merged = _merged.merge(pseudonyms, on="npi", how="left", validate="one_to_one")
+    assert _merged["pseudonym"].notna().all(), "scored providers without a pseudonym"
 
     # Precompute peer medians: for each feature, compute the median within each peer group
     # Peer groups are defined by (Prscrbr_Type, Prscrbr_State_Abrvtn) for specialty_state peers
@@ -37,18 +42,10 @@ def load_data():
         _peer_medians[feat] = medians
 
 
-def mask_npi(npi):
-    """Return masked NPI: ****** plus last 4 digits."""
-    npi_str = str(npi).strip()
-    if len(npi_str) >= 4:
-        return f"**{npi_str[-4:]}"
-    return "****"
-
-
 def ranked_list(state=None, specialty=None, min_score=0, npi_search=None):
     """
-    Filter providers by state, specialty, minimum score, and NPI search.
-    Return dataframe sorted by combined_rank, with masked NPIs.
+    Filter providers by state, specialty, minimum score, and NPI or pseudonym search.
+    Return dataframe sorted by combined_rank, with pseudonyms in place of NPIs.
     """
     if _merged is None:
         load_data()
@@ -63,20 +60,12 @@ def ranked_list(state=None, specialty=None, min_score=0, npi_search=None):
     if min_score:
         df = df[df["combined_score"] >= min_score]
     if npi_search:
-        # Search by last 4 digits or full NPI
-        search_str = str(npi_search).strip()
-        if len(search_str) <= 4:
-            df = df[df["npi"].str.endswith(search_str)]
-        else:
-            df = df[df["npi"] == search_str]
+        search_str = str(npi_search).strip().upper()
+        df = df[(df["npi"] == search_str) | (df["pseudonym"] == search_str)]
 
-    # Sort by combined_rank (ascending)
     df = df.sort_values("combined_rank").reset_index(drop=True)
 
-    # Mask NPIs
-    df["npi_masked"] = df["npi"].apply(mask_npi)
-
-    return df[["combined_rank", "npi_masked", "Prscrbr_Type", "Prscrbr_State_Abrvtn", "combined_score", "rules_score", "reason_1"]]
+    return df[["combined_rank", "pseudonym", "Prscrbr_Type", "Prscrbr_State_Abrvtn", "combined_score", "rules_score", "reason_1"]]
 
 
 def npi_for_rank(rank):
@@ -109,7 +98,7 @@ def provider_detail(npi):
     # Build result
     result = {
         "npi": npi_str,
-        "npi_masked": mask_npi(npi_str),
+        "pseudonym": row["pseudonym"],
         "specialty": row["Prscrbr_Type"],
         "state": row["Prscrbr_State_Abrvtn"],
         "combined_score": row["combined_score"],
