@@ -3,3 +3,4 @@ data/
 *.pem
 *.key
 __pycache__/
+archive/

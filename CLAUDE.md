@@ -110,5 +110,5 @@ App run command depends on the library A confirms.
 ## Working style
 
 - Small, checkable steps. After any change to `build_features.py`, rerun it and compare against the expected output above.
-- Libraries allowed: pandas, numpy, scikit-learn (team approved), and Flask for the UI. Anything else needs a check that it installs on s390x.
+- Libraries allowed: pandas, numpy, scikit-learn and xgboost (team approved; xgboost is used only in the backtest, not for scores), and Flask for the UI. Anything else needs a check that it installs on s390x.
 - Anything outside this file's scope waits until after the demo.
