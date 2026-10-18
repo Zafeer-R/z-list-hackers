@@ -36,6 +36,19 @@
 </div>
 
 <div class="card">
+  <h2>AI summary (IBM Granite)</h2>
+  {% if explanation %}
+  <p style="margin:0 0 8px">{{ explanation }}</p>
+  <p class="muted" style="margin:0">AI-generated summary of the indicators above, for review. Not a finding of wrongdoing.</p>
+  {% else %}
+  <form method="post" action="/explain/{{ rank }}{{ '?show_exclusion=1' if show else '' }}">
+    <button type="submit">Generate summary</button>
+  </form>
+  <p class="muted" style="margin:8px 0 0">Uses only the specialty, state, scores and reasons shown here. No provider ID is sent.</p>
+  {% endif %}
+</div>
+
+<div class="card">
   <h2>Peer group</h2>
   <p style="margin:0">{{ p.peer_group.specialty }} in {{ p.peer_group.state }}, {{ p.peer_group.peer_used_n | fmt }} eligible peers.</p>
   {% if p.peer_group.peer_fallback %}

@@ -79,6 +79,11 @@ Two views, plus one optional:
 1. **Ranked list:** sorted by `combined_rank`. Columns: masked NPI, specialty, state, combined score, rules score ("5 of 8 measures"), top reason. Filters: state, specialty, minimum score. Search by NPI. Clicking a row opens the provider view.
 2. **Provider view:** combined score, rules score, the three reasons with their percentiles, peer group used (specialty, state, `peer_used_n`, with a note if `peer_fallback`), and a chart of all eight percentiles as horizontal bars with a line at 0.9. Show raw value next to the peer median for each feature.
 3. **Optional results view:** D's backtest numbers (later-excluded providers found in our top 100 and top 500 vs `baseline_rank`). Static is fine.
+4. **AI summary (IBM Granite, from Lane A):** a button on the provider view calls Granite (`app/explain.py`, standard library only). It sends only specialty, state, scores and reasons, never an NPI or pseudonym. Output containing banned words is withheld. Needs `IBM_ACCESS_TOKEN` in the environment; without it the page says the feature is off.
+
+Hosting: set `DASHBOARD_PASSWORD` to require a password. The app refuses to serve on a non-local address without it. Tokens and passwords live only in the server's environment, never in the repo.
+
+This repo is the single source for the demo app. The server's `app_granite.py` is superseded by `app/`.
 
 Performance: load both CSVs once at startup and cache. Every click in the demo must be instant. B will name three demo providers; make sure they render well.
 

@@ -1,0 +1,66 @@
+"""IBM Granite explanation for one provider. No UI imports.
+
+Sends only the provider's specialty, state, scores and reasons, never an NPI or pseudonym.
+The access token comes from the IBM_ACCESS_TOKEN environment variable and is never stored.
+"""
+
+import json
+import os
+import re
+import urllib.error
+import urllib.request
+
+from . import config
+
+BANNED_WORDS = re.compile(r"\b(fraud\w*|kickback\w*|banned)\b", re.IGNORECASE)
+WITHHELD = "Explanation withheld: the generated wording did not pass the review wording check."
+
+
+def build_prompt(p):
+    lines = [
+        "You are an evidence-grounded assistant for Z-List Hackers, a Medicare Part D prescribing "
+        "anomaly review project. Explain in under 100 words why the following provider may warrant "
+        "further review. Use only the provided indicators. Do not accuse the provider, do not use "
+        "the words fraud or kickback, do not claim regulatory violations, do not invent clinical facts, "
+        "and do not describe the score as a probability. Say that legitimate clinical and "
+        "patient-population explanations may exist.",
+        "",
+        f"Specialty: {p['specialty']}",
+        f"State: {p['state']}",
+        f"Combined score (0 to 100, higher means more unusual): {p['combined_score']:.2f}",
+        f"Measures in the top 10% of peers: {p['rules_score']} of 8",
+        "Indicators:",
+    ]
+    lines += [f"{i}. {r['text']}" for i, r in enumerate(p["reasons"], 1)]
+    return "\n".join(lines)
+
+
+def explain(p):
+    token = os.environ.get("IBM_ACCESS_TOKEN")
+    if not token:
+        return "Granite explanations are off: IBM_ACCESS_TOKEN is not set on this machine."
+
+    payload = {
+        "model_id": config.GRANITE_MODEL,
+        "project_id": config.GRANITE_PROJECT_ID,
+        "messages": [{"role": "user", "content": build_prompt(p)}],
+        "temperature": 0,
+        "max_tokens": 200,
+    }
+    request = urllib.request.Request(
+        config.GRANITE_URL,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            text = json.load(response)["choices"][0]["message"]["content"]
+    except urllib.error.URLError:
+        return "Granite could not be reached. Check the network connection and the token."
+    except (KeyError, IndexError, ValueError):
+        return "Granite returned an unexpected response."
+
+    if BANNED_WORDS.search(text):
+        return WITHHELD
+    return text.strip()

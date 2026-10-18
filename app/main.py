@@ -1,12 +1,13 @@
 """Flask UI only. All data logic lives in app/data.py."""
 
+import hmac
 import os
 from pathlib import Path
 
 import pandas as pd
-from flask import Flask, abort, render_template, request
+from flask import Flask, Response, abort, render_template, request
 
-from app import data
+from app import data, explain
 
 MAX_ROWS = 200
 FOOTER = "Scores flag statistically unusual prescribing for review. They are not findings of wrongdoing."
@@ -39,6 +40,17 @@ app.jinja_env.filters["pct"] = pct_label
 @app.context_processor
 def inject_globals():
     return {"footer": FOOTER}
+
+
+@app.before_request
+def require_password():
+    expected = os.environ.get("DASHBOARD_PASSWORD")
+    if not expected:
+        return None
+    auth = request.authorization
+    if auth and hmac.compare_digest(auth.password or "", expected):
+        return None
+    return Response("Authentication required", 401, {"WWW-Authenticate": 'Basic realm="Z-List Hackers"'})
 
 
 def show_exclusion_flag():
@@ -95,6 +107,17 @@ def provider(rank):
     return render_template("provider.html", p=detail, rank=rank, show=show)
 
 
+@app.route("/explain/<int:rank>", methods=["POST"])
+def explain_provider(rank):
+    npi = data.npi_for_rank(rank)
+    if npi is None:
+        abort(404)
+    show = show_exclusion_flag()
+    detail = data.provider_detail(npi, show_exclusion=show)
+    detail.pop("npi", None)
+    return render_template("provider.html", p=detail, rank=rank, show=show, explanation=explain.explain(detail))
+
+
 @app.route("/results")
 def results():
     table = pd.read_csv(RESULTS_FILE).to_dict("records") if RESULTS_FILE.exists() else None
@@ -104,4 +127,6 @@ def results():
 if __name__ == "__main__":
     host = os.environ.get("APP_HOST", "127.0.0.1")
     port = int(os.environ.get("APP_PORT", "8501"))
+    if host not in ("127.0.0.1", "localhost") and not os.environ.get("DASHBOARD_PASSWORD"):
+        raise SystemExit("Refusing to serve on a non-local address without DASHBOARD_PASSWORD set.")
     app.run(host=host, port=port, debug=False)

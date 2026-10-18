@@ -4,3 +4,5 @@ data/
 *.key
 __pycache__/
 archive/
+z-list-hackers/
+venv/
