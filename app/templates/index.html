@@ -1,57 +1,65 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>Ranked list</h1>
-<p><a href="/results">Backtest results</a></p>
+<p class="sub">{{ total | fmt }} Texas prescribers scored against specialty peers in the same state. Higher score means more unusual, and needs review.</p>
 
-<form class="filters" method="get" action="/">
-  <label>State
-    <select name="state">
-      <option value="">All</option>
-      {% for s in states %}<option value="{{ s }}" {% if s == state %}selected{% endif %}>{{ s }}</option>{% endfor %}
-    </select>
-  </label>
-  <label>Specialty
-    <select name="specialty">
-      <option value="">All</option>
-      {% for s in specialties %}<option value="{{ s }}" {% if s == specialty %}selected{% endif %}>{{ s }}</option>{% endfor %}
-    </select>
-  </label>
-  <label>Minimum score
-    <input type="number" name="min_score" min="0" max="100" step="1" value="{{ min_score or '' }}">
-  </label>
-  <label>Search provider ID
-    <input type="text" name="q" value="{{ q }}" maxlength="12">
-  </label>
-  <label><input type="checkbox" name="show_exclusion" value="1" {% if show %}checked{% endif %}> Show exclusion status</label>
-  <button type="submit">Apply</button>
-  <a href="/">Reset</a>
-</form>
+<div class="card">
+  <form class="filters" method="get" action="/">
+    <label>State
+      <select name="state">
+        <option value="">All states</option>
+        {% for s in states %}<option value="{{ s }}" {% if s == state %}selected{% endif %}>{{ s }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Specialty
+      <select name="specialty">
+        <option value="">All specialties</option>
+        {% for s in specialties %}<option value="{{ s }}" {% if s == specialty %}selected{% endif %}>{{ s }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Minimum score
+      <input type="number" name="min_score" min="0" max="100" step="1" value="{{ min_score or '' }}">
+    </label>
+    <label>Search provider ID
+      <input type="text" name="q" value="{{ q }}" maxlength="12" placeholder="e.g. TX-FP-04136">
+    </label>
+    <label class="check"><input type="checkbox" name="show_exclusion" value="1" {% if show %}checked{% endif %}> Show exclusion status</label>
+    <div class="actions">
+      <button type="submit">Apply</button>
+      <a class="reset" href="/">Reset</a>
+    </div>
+  </form>
+</div>
 
-<p class="muted">{{ total | fmt }} providers match{% if total > max_rows %}. Showing the first {{ max_rows }} by rank.{% endif %}</p>
-
-<table>
-  <thead>
-    <tr>
-      <th>Rank</th><th>Provider</th><th>Specialty</th><th>State</th>
-      <th>Score</th><th>Rules</th><th>Top reason</th>
-      {% if show %}<th>Excluded later</th>{% endif %}
-    </tr>
-  </thead>
-  <tbody>
-    {% for r in rows %}
-    <tr class="clickable" onclick="location.href='/provider/{{ r.combined_rank }}{{ query_suffix }}'">
-      <td>{{ r.combined_rank }}</td>
-      <td><a href="/provider/{{ r.combined_rank }}{{ query_suffix }}">{{ r.pseudonym }}</a></td>
-      <td>{{ r.Prscrbr_Type }}</td>
-      <td>{{ r.Prscrbr_State_Abrvtn }}</td>
-      <td>{{ "%.2f" | format(r.combined_score) }}</td>
-      <td>{{ r.rules_score }} of 8 measures</td>
-      <td>{{ r.reason_1 }}</td>
-      {% if show %}<td>{{ r.excluded_later }}</td>{% endif %}
-    </tr>
-    {% else %}
-    <tr><td colspan="{{ 8 if show else 7 }}">No providers match these filters.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="card table-wrap" style="padding:0">
+  <table>
+    <thead>
+      <tr>
+        <th>Rank</th><th>Provider</th><th>Specialty</th><th>State</th>
+        <th>Score</th><th>Rules</th><th>Top reason</th>
+        {% if show %}<th>Excluded later</th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr class="clickable" onclick="location.href='/provider/{{ r.combined_rank }}{{ query_suffix }}'">
+        <td class="rank">{{ r.combined_rank }}</td>
+        <td><a class="pseudo" href="/provider/{{ r.combined_rank }}{{ query_suffix }}" onclick="event.stopPropagation()">{{ r.pseudonym }}</a></td>
+        <td>{{ r.Prscrbr_Type }}</td>
+        <td>{{ r.Prscrbr_State_Abrvtn }}</td>
+        <td class="score">
+          <span class="num">{{ "%.2f" | format(r.combined_score) }}</span>
+          <div class="bar"><span style="width: {{ r.combined_score }}%"></span></div>
+        </td>
+        <td class="measures">{{ r.rules_score }} of 8</td>
+        <td class="reason">{{ r.reason_1 }}</td>
+        {% if show %}<td><span class="pill {{ 'yes' if r.excluded_later == 'Yes' }}">{{ r.excluded_later }}</span></td>{% endif %}
+      </tr>
+      {% else %}
+      <tr><td colspan="{{ 8 if show else 7 }}" class="muted">No providers match these filters.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if total > max_rows %}<p class="muted">Showing the first {{ max_rows }} of {{ total | fmt }} by rank. Narrow the filters to see more.</p>{% endif %}
 {% endblock %}

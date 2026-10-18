@@ -5,44 +5,92 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Z-List Hackers: Prescribing Review</title>
   <style>
-    body { font-family: system-ui, sans-serif; margin: 0; padding: 24px 16px; color: #1f2933; background: #fafafa; }
-    main { max-width: 1100px; margin: 0 auto; }
-    h1 { font-size: 1.5rem; margin: 0 0 16px; }
-    h2 { font-size: 1.1rem; margin: 24px 0 8px; }
-    a { color: #1d4ed8; }
-    form.filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 16px; }
-    form.filters label { display: flex; flex-direction: column; font-size: 0.85rem; gap: 4px; }
-    input, select, button { font: inherit; padding: 6px 8px; }
-    table { width: 100%; border-collapse: collapse; background: #fff; }
-    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #e4e7eb; font-size: 0.9rem; vertical-align: top; }
-    th { background: #f1f5f9; }
-    .muted { color: #616e7c; font-size: 0.85rem; }
-    .card { background: #fff; border: 1px solid #e4e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-    .stats { display: flex; flex-wrap: wrap; gap: 16px; }
-    .stat { min-width: 140px; }
-    .stat .val { font-size: 1.6rem; font-weight: 600; }
-    ol.reasons li { margin-bottom: 6px; }
-    .bar-row { display: grid; grid-template-columns: 240px 1fr 220px; gap: 12px; align-items: center; margin-bottom: 8px; font-size: 0.88rem; }
-    .track { position: relative; height: 14px; background: #e4e7eb; border-radius: 4px; }
-    .fill { position: absolute; left: 0; top: 0; bottom: 0; background: #3b82f6; border-radius: 4px; }
-    .fill.flagged { background: #dc6803; }
-    .threshold { position: absolute; top: -4px; bottom: -4px; width: 2px; left: 90%; background: #111827; }
-    footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid #e4e7eb; color: #616e7c; font-size: 0.85rem; }
-    @media (max-width: 720px) {
-      .bar-row { grid-template-columns: 1fr; }
-      table, thead, tbody, tr, th, td { display: block; }
-      thead { display: none; }
-      td { border-bottom: none; padding: 4px 8px; }
-      tr { border-bottom: 1px solid #e4e7eb; padding: 6px 0; }
+    :root {
+      --bg: #f5f7fa; --card: #ffffff; --ink: #1f2933; --muted: #64707d; --line: #e3e8ee;
+      --accent: #1d4ed8; --accent-soft: #eaf1ff; --flag: #c2410c; --flag-soft: #fff1e8; --track: #e9edf2;
     }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    header.top { background: #0f172a; color: #fff; }
+    header.top .inner { max-width: 1180px; margin: 0 auto; padding: 14px 16px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+    header.top .brand { font-weight: 600; font-size: 16px; letter-spacing: 0.2px; }
+    header.top nav a { color: #cbd5e1; text-decoration: none; margin-right: 16px; padding: 4px 0; border-bottom: 2px solid transparent; }
+    header.top nav a:hover, header.top nav a.active { color: #fff; border-bottom-color: #60a5fa; }
+    main { max-width: 1180px; margin: 0 auto; padding: 24px 16px 8px; }
+    h1 { font-size: 22px; margin: 0 0 4px; }
+    h2 { font-size: 15px; margin: 0 0 12px; }
+    .sub { color: var(--muted); margin: 0 0 18px; }
+    a { color: var(--accent); }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px; margin-bottom: 16px; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; align-items: end; }
+    .filters label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); font-weight: 600; }
+    .filters .check { flex-direction: row; align-items: center; gap: 8px; font-size: 13px; color: var(--ink); font-weight: 500; white-space: nowrap; }
+    .filters .check input { width: auto; margin: 0; }
+    input, select { font: inherit; padding: 8px 10px; border: 1px solid #cfd7e0; border-radius: 6px; background: #fff; color: var(--ink); width: 100%; }
+    .actions { display: flex; gap: 10px; align-items: center; }
+    button { font: inherit; font-weight: 600; background: var(--accent); color: #fff; border: 0; border-radius: 6px; padding: 9px 16px; cursor: pointer; }
+    button:hover { background: #1e40af; }
+    .reset { color: var(--muted); font-size: 13px; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; }
+    th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--muted); font-weight: 600; padding: 10px 12px; border-bottom: 1px solid var(--line); background: #fafbfc; }
+    td { padding: 11px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
     tr.clickable { cursor: pointer; }
-    tr.clickable:hover td { background: #eef4ff; }
+    tr.clickable:hover td { background: var(--accent-soft); }
+    .rank { font-weight: 600; color: var(--muted); width: 64px; }
+    .pseudo { font-family: ui-monospace, Consolas, monospace; font-weight: 600; color: var(--ink); }
+    .score { min-width: 150px; }
+    .score .num { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .bar { height: 6px; background: var(--track); border-radius: 3px; margin-top: 5px; overflow: hidden; }
+    .bar > span { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+    .measures { font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .reason { color: var(--ink); }
+    .pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--track); color: var(--muted); }
+    .pill.yes { background: var(--flag-soft); color: var(--flag); }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+    .stat { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+    .stat .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600; }
+    .stat .val { font-size: 28px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+    .stat .note { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .reasons { margin: 0; padding: 0; list-style: none; }
+    .reasons li { padding: 10px 0; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 16px; }
+    .reasons li:last-child { border-bottom: 0; }
+    .reasons .pct { font-weight: 600; color: var(--flag); white-space: nowrap; }
+    .notice { background: var(--accent-soft); border: 1px solid #c7d7fe; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; }
+    .flagnote { background: var(--flag-soft); border: 1px solid #fed7bb; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; color: #7c2d12; }
+    .bars .row { display: grid; grid-template-columns: 250px 1fr 230px; gap: 14px; align-items: center; padding: 7px 0; font-size: 13px; }
+    .track { position: relative; height: 10px; background: var(--track); border-radius: 5px; }
+    .fill { position: absolute; left: 0; top: 0; bottom: 0; background: #60a5fa; border-radius: 5px; }
+    .fill.flagged { background: var(--flag); }
+    .threshold { position: absolute; top: -4px; bottom: -4px; width: 2px; left: 90%; background: #0f172a; }
+    .vals { color: var(--muted); font-variant-numeric: tabular-nums; }
+    .legend { display: flex; gap: 16px; font-size: 12px; color: var(--muted); margin-bottom: 8px; flex-wrap: wrap; }
+    .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+    footer { max-width: 1180px; margin: 16px auto 0; padding: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+    @media (max-width: 760px) {
+      .bars .row { grid-template-columns: 1fr; gap: 4px; }
+      thead { display: none; }
+      table, tbody, tr, td { display: block; width: 100%; }
+      td { border-bottom: 0; padding: 4px 0; }
+      tr { border-bottom: 1px solid var(--line); padding: 10px 6px; }
+      td.rank { width: auto; }
+    }
   </style>
 </head>
 <body>
+<header class="top">
+  <div class="inner">
+    <div class="brand">Z-List Hackers</div>
+    <nav>
+      <a href="/" class="{{ 'active' if request.path == '/' or request.path.startswith('/provider') }}">Ranked list</a>
+      <a href="/results" class="{{ 'active' if request.path == '/results' }}">Backtest results</a>
+    </nav>
+  </div>
+</header>
 <main>
   {% block content %}{% endblock %}
-  <footer>{{ footer }}</footer>
 </main>
+<footer>{{ footer }}</footer>
 </body>
 </html>
